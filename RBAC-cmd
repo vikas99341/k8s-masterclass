@@ -57,3 +57,11 @@ kubectl get pods --context=DevUser-context
 
 4. Create Pod 
 kubectl run nginx --image=nginx --context=DevUser-context
+
+Error from server (Forbidden): pods is forbidden: User "DevUser" cannot create resource "pods" in API group "" in the namespace "development" as DevUser dosen't have create access.
+
+4. Create Pod as root user
+kubectl run nginx --image=nginx -n development
+
+5. Now Test access by attempting to list pods.
+kubectl get pods --context=DevUser-context
