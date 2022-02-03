@@ -1,3 +1,9 @@
+Bring your Minikube up & Running:
+
+apt-get update -y
+apt-get install openssl
+kubectl get namespace
+
 **** Add User in Kubernetes Cluster ****
 1. Create Name Space
 kubectl create namespace development
