@@ -1,0 +1,5 @@
+Container Health - Active Monitoring Helps K8s to decide the container state and Auto Restart in Case of Container Failure
+
+  1. Liveness probe helps users to improve & customized this Container Monitoring mechanism (state). Users can execute Two types of Liveness probes - Run Command in Container, Periodic HTTP Health Check.
+  2. StartUp Probe runs at container StartUp and stop running once container success.Once the startup probe has succeeded once, the liveness probe takes over to provide a fast response to container deadlocks.
+  3. Readiness Probe is used to detect if a container is ready to accept traffic. Sometimes application might need to load large data or configuration files during startup, or depend on external services after startup.NO Traffic will be sent to a pod until container pass the Readiness Probe.
