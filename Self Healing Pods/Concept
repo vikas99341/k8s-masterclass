@@ -1,0 +1,4 @@
+Kubernetes have the capability to Auto Restart the containers when they fail. 
+  1. With Always Policy, containers always restart even if the container is completed successfully. 
+  2. On failure is only working if container Process exits with Error code. Use this policy on the application that needs to be run successfully and then Stop.  
+  3. Never allow the container to never restart even the container liveness probe failed. Use this for applications that Run only Once and never automatically restart. 
