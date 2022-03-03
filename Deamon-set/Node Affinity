@@ -1,0 +1,2 @@
+Node Affinity is used for Pods Allocation on Worker Nodes.
+Not to Schedule Pod on Nodes is achieve via Node Anti-Affinity.
