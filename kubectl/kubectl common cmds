@@ -1,0 +1,31 @@
+Interactive Minikube :
+----------------------
+
+minikube start
+minikube version
+kubectl create deployment test-nginx --image=nginx:1.18-alpine
+kubectl get deployment
+kubectl get all
+kubectl describe rs test-nginx-99cf49b4f
+kubectl describe deployment test-nginx
+kubectl scale deploy test-nginx --replicas=3
+kubectl describe deployment test-nginx
+kubectl set image deploy test-nginx nginx=nginx:1.19-alpine
+kubectl rollout history deploy test-nginx
+kubectl rollout history deploy test-nginx --revision=1
+kubectl rollout history deploy test-nginx --revision=2
+kubectl rollout history deploy test-nginx --to-revision=1
+kubectl rollout undo deploy test-nginx --to-revision=1
+kubectl delete deploy test-nginx
+
+Ubuntu cluster :
+----------------
+#### Deploying Nginx pods on Kubernetes
+1. Deploying Nginx Container
+    kubectl run sample-nginx --image=nginx --replicas=2 --port=80
+    kubectl get pods
+    kubectl get deployments
+
+2. Expose the deployment as service.
+   kubectl expose deployment sample-nginx --port=80 --type=LoadBalancer
+   kubectl get services -o wide
