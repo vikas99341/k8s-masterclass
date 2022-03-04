@@ -1,0 +1,60 @@
+# Setup Kubernetes (K8s) Cluster on AWS
+
+1. Create Ubuntu EC2 instance
+2. apt-get update -y
+3. apt-get install awscli -y [Python3 needed]
+4. python3 --version
+5. Install kubectl on ubuntu instance
+    curl -LO https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl
+    chmod +x ./kubectl
+    sudo mv ./kubectl /usr/local/bin/kubectl
+    kubectl version
+
+6. Install kops on ubuntu instance
+
+    curl -LO  https://github.com/kubernetes/kops/releases/download/1.15.0/kops-linux-amd64
+    chmod +x kops-linux-amd64
+    sudo mv kops-linux-amd64 /usr/local/bin/kops
+
+7. Create an IAM user/role  with Route53, EC2, IAM and S3 full access and Attach IAM role to ubuntu instance
+8. Create an S3 bucket with unique name 
+9. Create a Route53 private hosted zone (you can create Public hosted zone if you have a domain)
+10. Expose environment variable:    export KOPS_STATE_STORE=s3://demo.k8s.vikas.net --region us-east-1
+                                    export KOPS_CLUSTER_NAME=vikas.net
+                                    update it on vi ~/.bashrc and save it permanently by running -- source ~/.bashrc
+11. Create sshkeys before creating cluster : ssh-keygen
+
+12. Create kubernetes cluster definitions on S3 bucket
+   kops create cluster --cloud=aws --zones=us-east-1c --name=demo.kubernetes.vikas.net --dns-zone=vikas.net --dns private
+   
+   kops create cluster \
+--state=${KOPS_STATE_STORE} \
+--node-count=2 \
+--master-size=t3.medium \
+--node-size=t3.medium \
+--zones=us-east-1a,us-east-1b \
+--name=${KOPS_CLUSTER_NAME} \
+--dns private \
+--master-count 1
+
+13. Create kubernetes cluser
+    kops update cluster demo.k8s.vikas.net --yes
+
+14. Validate your cluster :  kops validate cluster
+
+15. To list nodes :   kubectl get all
+
+1. To delete cluster :  kops delete cluster demo.k8s.vikas.net --yes
+
+   
+#### Deploying Nginx pods on Kubernetes
+1. Deploying Nginx Container
+    kubectl run sample-nginx --image=nginx --replicas=2 --port=80
+    kubectl get pods
+    kubectl get deployments
+
+2. Expose the deployment as service.
+   kubectl expose deployment sample-nginx --port=80 --type=LoadBalancer
+   kubectl get services -o wide
+
+  https://github.com/kubernetes/kops/blob/master/docs/terraform.md
