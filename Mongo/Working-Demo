@@ -41,7 +41,7 @@ spec:
     spec:
       containers:
       - name: mongodb
-        image: mongo:5.0  
+        image: mongo:5.0
         ports:
         - containerPort: 27017
         env:
@@ -54,7 +54,7 @@ spec:
           valueFrom:
             secretKeyRef:
               name: mongo-secret
-              key: mongo-password
+              key: mongo-password  
 ---
 apiVersion: v1
 kind: Service
@@ -88,7 +88,7 @@ spec:
     spec:
       containers:
       - name: webapp
-        image: vikas24775/k8s-demo-app:v1.0  
+        image: nanajanashia/k8s-demo-app:v1.0
         ports:
         - containerPort: 3000
         env:
@@ -101,7 +101,7 @@ spec:
           valueFrom:
             secretKeyRef:
               name: mongo-secret
-              key: mongo-password
+              key: mongo-password 
         - name: DB_URL
           valueFrom:
             configMapKeyRef:
