@@ -1,0 +1,27 @@
+kubectl get nodes --show-labels 
+create label-pod-yml.yml
+kubectl create -f label-pod-yml.yml
+kubectl get pods
+kubectl describe pod <pod-name>
+kubectl label nodes <node-name> disktype=ssd
+kubectl get nodes --show-labels == > Now label matches and pod will be in running
+
+label-pod-yml.yml
+=================
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx-web
+  labels:
+    environment: production
+    app: nginx-pod
+spec:
+  containers:
+  - name: nginx
+    image: nginx:1.16.0
+    ports:
+    - name: nginxport
+      containerPort: 80
+  nodeSelector:
+     disktype: ssd
+	  
