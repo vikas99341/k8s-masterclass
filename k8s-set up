@@ -19,9 +19,12 @@
 7. Create an IAM user/role  with Route53, EC2, IAM and S3 full access and Attach IAM role to ubuntu instance
 8. Create an S3 bucket with unique name 
 9. Create a Route53 private hosted zone (you can create Public hosted zone if you have a domain)
-10. Expose environment variable:    export KOPS_STATE_STORE=s3://demo.k8s.vikas.net --region us-east-1
-                                    export KOPS_CLUSTER_NAME=vikas.net
-                                    update it on vi ~/.bashrc and save it permanently by running -- source ~/.bashrc
+10. Expose environment variable:    export KOPS_STATE_STORE=s3://demo.k8s.vikas.net 
+
+
+#--region us-east-1
+#                                    export KOPS_CLUSTER_NAME=vikas.net
+#                                    update it on vi ~/.bashrc and save it permanently by running -- source ~/.bashrc
 11. Create sshkeys before creating cluster : ssh-keygen
 
 12. Create kubernetes cluster definitions on S3 bucket
