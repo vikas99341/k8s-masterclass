@@ -1,5 +1,4 @@
 # Setup Kubernetes (K8s) Cluster on AWS
-
 1. Create Ubuntu EC2 instance
 2. apt-get update -y
 3. apt-get install awscli -y [Python3 needed]
