@@ -1,0 +1,38 @@
+Install Helm:
+=============
+	curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
+	chmod 700 get_helm.sh
+	./get_helm.sh
+	helm version
+Check and add repo :
+====================
+	helm repo add bitnami https://charts.bitnami.com/bitnami
+	helm install my-release bitnami/nginx
+Delete repo:
+============
+	helm delete my-release
+	
+How to Install Prometheus and Grafana on Kubernetes using Helm 3:
+=================================================================
+
+Prometheus is an open-source systems monitoring and alerting toolkit originally built at SoundCloud. It records real-time metrics in a time series database built using a HTTP pull model, with flexible queries and real-time alerting. It can absorb huge amount of data every second.
+
+The Alertmanager handles alerts sent by client applications such as the Prometheus server. It takes care of deduplicating, grouping, and routing them to the correct receiver integration such as email, PagerDuty, or MS teams etc. It also takes care of silencing and inhibition of alerts.
+
+Grafana is open source visualization and analytics software. It allows you to query, visualize, alert on, and explore your metrics no matter where they are stored. It provides charts, graphs, and alerts for the web when connected to supported data sources such as Prometheus, graphite etc.
+
+Install Prometheus and Grafana on Kubernetes using Helm 3:
+==========================================================
+	helm repo add stable https://charts.helm.sh/stable
+	helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+	helm search repo prometheus-community
+	helm install stable prometheus-community/kube-prometheus-stack
+	kubectl get pods
+	kubectl get svc
+
+kubectl edit svc stable-kube-prometheus-sta-prometheus
+kubectl edit svc stable-grafana
+change ClusterIP to LoadBalancer
+
+https://grafana.com/grafana/dashboards/1860
+user name /password for Grafana - admin/prom-operator
