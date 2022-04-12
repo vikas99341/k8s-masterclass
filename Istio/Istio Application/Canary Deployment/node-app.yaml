@@ -30,7 +30,7 @@ spec:
     spec:
       containers:
       - name: nodejs
-        image: anshuldevops/istio-demo:latest
+        image: vikas24775/istio-demo:latest
         ports:
         - containerPort: 8080
 ---
@@ -53,6 +53,6 @@ spec:
     spec:
       containers:
       - name: nodejs
-        image: anshuldevops/istio-canary-demo:latest
+        image: vikas24775/istio-canary-demo:latest
         ports:
         - containerPort: 8080
