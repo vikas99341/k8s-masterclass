@@ -1,0 +1,58 @@
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: deployment-rolling-update
+  namespace: default
+spec:
+  replicas: 4
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+        role: rolling-update
+    spec:
+      containers:
+      - image: nginx:1.21
+        imagePullPolicy: Always
+        name: nginx-container
+        ports:
+        - containerPort: 80
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 80
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          successThreshold: 1
+          
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 50%
+      maxUnavailable: 50%
+      
+---
+
+kind: Service
+apiVersion: v1
+metadata:
+  name: service-rolling-update
+  labels:
+    app: nginx
+    role: rolling-update
+    env: prod
+spec:
+  
+  selector:
+    app: nginx
+    role: rolling-update
+  type: LoadBalancer
+  ports:
+  - protocol: TCP
+    port: 5000
+    targetPort: 80
+    nodePort: 31110
