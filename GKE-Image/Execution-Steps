@@ -1,0 +1,22 @@
+docker bulid -t node-app:v1 .
+docker run -d --name my-app -p 8080:80 node-app:v1
+docker logs -f container-id
+docker inspect -f '{{.NetworkSettings.IPAddress}}' <container name>
+
+gcloud config list project
+docker tag node-app:v1 gcr.io/<projet-id>/node-app:v1
+container registery on console -- > enable api -- > docker push gcr.io/<projet-id>/node-app:v1
+
+docker rm -f $(docker ps -aq)
+docker rm -f $(docker images -q)
+
+Create k8s cluster:
+ k8s-Engine -- > cluster -- > Enable Billing -- > create cluster – name it -- >
+ gcloud config set compute/zone us-central1-a
+ gcloud container clusters create my-second-cluster 
+ gcloud container clusters list 
+ gcloud container clusters get-credentials <cluster-name >
+ kubectl create deployment webserver –image nginx:latest
+ kubectl expose deployment webserver --port 80 --type LoadBalancer 
+ gcloud container clusters delete my-cluster
+ 
