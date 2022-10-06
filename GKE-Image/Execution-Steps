@@ -18,5 +18,8 @@ Create k8s cluster:
  gcloud container clusters get-credentials <cluster-name >
  kubectl create deployment webserver –image nginx:latest
  kubectl expose deployment webserver --port 80 --type LoadBalancer 
+ kubectl logs -f <pod-nma>
+ kubectl get events 
+ kubectl scale deployment <deployment-name> --replicas=5
  gcloud container clusters delete my-cluster
  
