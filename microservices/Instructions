@@ -1,3 +1,5 @@
 kubectl create namespace voting
 kubectl create -f .
 kubectl scale deployment worker --replicas=5 -n voting
+kubectl describe po <pod name> -n voting
+kubectl logs -f <pod_name> -n voting
