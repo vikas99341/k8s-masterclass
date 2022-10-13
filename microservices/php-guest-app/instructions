@@ -1,0 +1,21 @@
+gcloud auth login
+gcloud projects create demo-guestbook-2301
+gcloud config set project demo-guestbook-2301
+gcloud config set compute/zone us-central1-a
+On console -- > Enable Billing -- > Set Account
+gcloud container clusters create my-cluster
+gcloud conatiner clusters list
+gcloud container clusters get-credentials my-cluster
+
+sudo docker build -t guestbook:v1 .
+sudo docker tag guestbook:v1 gcr.io/<project_id>/guestbook:v1
+sudo gcloud docker -- push gcr.io/<project_id>/guestbook:v1
+
+gcloud container image list
+Tools -- > Container Registery -- > Image Pushed
+
+kubectl create ns guestbook
+change the image name
+
+kubectl scale deployment <deployment_name> --replicas 3 -n guestbook
+
