@@ -1,0 +1,3 @@
+kubectl create namespace voting
+kubectl create -f .
+kubectl scale deployment worker --replicas=5 -n voting
