@@ -1,0 +1,38 @@
+1. minikube start
+	
+2.  curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
+	chmod 700 get_helm.sh
+	./get_helm.sh
+	helm version
+	
+3.	git clone https://github.com/vikas99341/httpd-webserver-helm-chart.git
+	cd httpd-webserver-helm-chart/
+	cd myweb/
+	nano Chart.yaml 
+	cd templates/
+	cat mydeployment.yaml 
+	cat myservice.yaml 
+	cd ..
+	
+4.	helm package myweb -d charts/
+	cd charts/
+	cd ..
+5.	helm repo index charts/
+	cd charts/
+	cat index.yaml 
+	clear
+	ls -l
+	cd ..
+	ls -l
+	cd httpd-webserver-helm-chart/
+6.	git push
+	git add .
+	git config --global user.email "vikasisinlove@gmail.com"
+	git config --global user.name "vikas99341"
+	git commit -m "changes done "	
+	git push
+		
+7.	helm repo add httpd-webserver https://vikas99341.github.io/httpd-webserver-helm-chart/charts/
+	helm repo list
+	helm install web httpd-webserver/myweb
+	helm list
