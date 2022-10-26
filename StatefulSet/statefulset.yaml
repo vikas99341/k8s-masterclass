@@ -1,0 +1,104 @@
+What Is Kubernetes StatefulSet?
+
+A StatefulSet is a Kubernetes API object for managing stateful application workloads. StatefulSets handle the deployment and scaling of sets of Kubernetes pods, providing guarantees about their uniqueness and ordering.
+
+StatefulSets are valuable for applications that require one or more of the following:
+Stable, unique network identifiers
+Stable, persistent storage
+Ordered, graceful deployment and scaling
+Ordered, graceful deletion and termination
+
+Benefits of a StatefulSet deployment include:
+Unique identifiers—every pod in the StatefulSet is assigned a unique, stable network identity, consisting of a hostname based on the application name and instance number. For example, a StatefulSet for a web application with three instances may have pods labeled web1, web2 and web3.
+Persistent storage—every pod has its own stable, persistent volume, either by default or as defined per storage class. When the pods in a cluster are scaled down or deleted, their associated volumes are not lost, and the data persists. Unneeded resources can be purged by scaling down the StatefulSet to 0 before deleting the unused pods.
+Ordered deployment and scaling—the pods in a StatefulSet are created and deployed in order, according to their increments. Pods are also shut down in (reverse) order, ensuring that the deployment and runtime are reliable and repeatable. The StatefulSet won’t scale until all every required pod is running, so if a pod fails, it will recreate the pod before it attempts to add more instances as per the scaling requirements.
+Automated, ordered updates—a StatefulSets can handle rolling updates, shutting down each node and rebuilding it according to the original order, until every node has been replaced and the older versions cleaned up. The persistent volumes can be reused, so data is migrated to the new version automatically.
+
+Limitations of Kubernetes StatefulSets include:
+Support in Kubernetes versions—Kubernetes versions preceding 1.5 do not support StatefulSets, as this was a beta resource until version 1.9.
+Storage provisioning—unless an admin pre-provisions storage, you need a persistent volume provisioner to provision storage for specific pods based on the desired storage class.
+No automatic purge—for data safety purposes, associated volumes are not purged when a StatefulSet is scaled down or deleted.
+Headless service—a StatefulSet requires a headless service to handle the network identity of its pods. You have to create this service.
+No termination guarantees—you cannot expect pods to be terminated upon the deletion of a StatefulSet. To ensure pods are terminated in an ordered manner, you need to scale the set down to 0 before you delete it.
+
+StatefulSet Components
+
+Headless Service
+=================
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx
+  labels:
+    app: nginx
+spec:
+  ports:
+  - port: 80
+    name: web
+  clusterIP: None
+  selector:
+    app: nginx
+
+StatefulSet
+===========
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: web
+spec:
+  selector:
+    matchLabels:
+      app: nginx
+  serviceName: "nginx"
+  replicas: 3
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - name: nginx
+        image: nginx
+        ports:
+        - containerPort: 80
+          name: web
+        volumeMounts:
+        - name: www
+          mountPath: /usr/share/nginx/html
+      volumes:
+      - name: www
+        persistentVolumeClaim:
+          claimName: myclaim
+          
+PersistentVolume
+================
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: myclaim
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 8Gi
+
+kubectl create -f statefulset.yaml
+kubectl scale statefulset web --replicas=5 
+kubectl delete statefulset web
+
+
+
+
+
+
+
+
+
+
+
+
+
