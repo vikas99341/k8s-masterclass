@@ -1,0 +1,42 @@
+minikube start
+minikube addons enable ingress
+
+kubectl get pods -n kube-system 
+kubectl create deployment web --image=gcr.io/google-samples/hello-app:1.0
+kubectl expose deployment web --type=NodePort --port=8080
+kubectl get all
+minikube service web --url
+curl http://10.0.0.10:30784
+
+sudo nano example-ingress.yaml
+   
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: example-ingress
+spec:
+  rules:
+  - host: hello-world.info
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: web
+            port:
+              number: 8080
+      - path: /v2
+        pathType: Prefix
+        backend:
+          service:
+            name: web2
+            port:
+              number: 8080
+
+kubectl apply -f example-ingress.yaml 
+kubectl get ingress
+kubectl describe ingress example-ingress 
+
+curl hello-world.info/v2
+curl hello-world.info/
