@@ -1,0 +1,22 @@
+go_threads - promethesus - graph - go_threads
+                           graph - node_arp_entries
+
+Add new panel -> Metrics = rate(prometheus_http_requests_total[5m])
+                 Ledend {{handler}}
+
+Panel title: Requests Rate
+
+Add new panel:
+--------------
+(sum(rate(prometheus_http_request_duration_seconds_buckets{le="0.2"}[5m]))+sum(rate(prometheus_http_request_duration_seconds_buckets{le="0.2"}[5m]))/2)/sum(rate(prometheus_http_request_duration_seconds_bucket[5m]))
+
+visualization : stat
+Panel Title : Adex Score 
+
+histogram_quantile(0.9, sum(rate(prometheus_http_request_duration_seconds_buckets[5m]))by(le))
+Panel name: Percentile 90'th latency
+gauge
+field : threshold 0.1
+      min : 0 max:1
+unit: Time seconds 
+     
