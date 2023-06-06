@@ -3,6 +3,12 @@ Interactive Minikube :
 
 minikube start
 minikube version
+sudo apt install fish -- > fish -- > optional
+kubectl config view 
+kubectl get 
+kubectl api-resources | wc -l
+kubectl get pods <> -o yaml
+kubectl exec <> -c nginx -- cat /etc/nginx/nginx.conf
 kubectl create deployment test-nginx --image=nginx:1.18-alpine
 kubectl get deployment
 kubectl get all
