@@ -5,6 +5,7 @@ K8s RBAC Objects:
 ➢ ClusterRoles define permission across the cluster. Not limited to specific namespace. 
 ➢ RoleBinding Object connects Roles to user.
 ➢ ClusterBinding Object connects ClusterRoles to Users
+➢ ClusterBinding Object connects ClusterRoles to Users.In K8s, Service Account used by container process to Authenticate with K8s APIs.  If Pods needs to communicate with K8s APIs. User need to  setup service account to control the access.
 
 Bring your Minikube up & Running:
 --------------------------------
