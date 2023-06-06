@@ -1,5 +1,13 @@
-Bring your Minikube up & Running:
+K8s RBAC Objects:
+----------------
+➢ Roles and ClusterRoles are K8s Objects that define set of permissions.
+➢ Roles define permission within namespace.
+➢ ClusterRoles define permission across the cluster. Not limited to specific namespace. 
+➢ RoleBinding Object connects Roles to user.
+➢ ClusterBinding Object connects ClusterRoles to Users
 
+Bring your Minikube up & Running:
+--------------------------------
 apt-get update -y
 apt-get install openssl
 kubectl get namespace
