@@ -1,0 +1,12 @@
+  sudo apt-get update
+  sudo apt install apache2-utils
+  htpasswd -c .htpasswd user -- > provide the password -- > this will be in .htpasswd file
+  kubectl create secret generic nginx-htpasswd --from-file .htpasswd 
+  rm -rf .htpasswd
+  nano nginx.conf
+  kubectl create configmap nginx-config-file --from-file .htpasswd nginx.conf
+  nano nginx-pod.yaml
+  kubectl apply -f nginx-pod.yaml
+  kubectl get pods -o wide
+  curl <ip> -- error
+  curl -u user:pass123 <ip>
