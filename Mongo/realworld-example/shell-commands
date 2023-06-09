@@ -4,7 +4,7 @@
   kubectl create secret generic nginx-htpasswd --from-file .htpasswd 
   rm -rf .htpasswd
   nano nginx.conf
-  kubectl create configmap nginx-config-file --from-file .htpasswd nginx.conf
+  kubectl create configmap nginx-config-file --from-file nginx.conf
   nano nginx-pod.yaml
   kubectl apply -f nginx-pod.yaml
   kubectl get pods -o wide
