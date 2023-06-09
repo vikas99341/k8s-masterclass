@@ -1,0 +1,13 @@
+Config Map via Config File:
+===========================
+kubectl create configmap [NAME] --from-file [/PATH/TO/ FILE.PROPERTIES] --from-file [/PATH/TO/FILE2.PROPERTIES]
+kubectl create configmap [NAME] --from-file [/PATH/TO/ DIRECTORY]
+
+Get ConfigMap via CLI.
+=====================
+kubectl get configmap <Config_map_name> -o yaml/json
+
+Create Secrets from file.
+=========================
+kubectl create secret generic db-user-pass --from-file=./username.txt --from-file=./password.txt
+kubectl describe secrets <Secret_name>
