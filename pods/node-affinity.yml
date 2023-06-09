@@ -1,6 +1,17 @@
 apiVersion: v1
 kind: Pod
 metadata:
+  name: nginx
+spec:
+  containers:
+  - name: nginx
+    image: nginx
+  nodeName: gke-demo-gke-cluster-default-pool-cb0c7f91-4vf4
+
+---
+apiVersion: v1
+kind: Pod
+metadata:
   name: nginx-nodeaffinity
 spec:
   containers:
