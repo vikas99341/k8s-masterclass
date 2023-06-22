@@ -77,7 +77,7 @@ spec:
     spec:
       containers:
         - name: magical-nginx
-          image: 'anshuldevops/magicalnginx:latest'
+          image: 'vikas24775/magicalnginx:latest'
           ports:
             - name: nginx-port
               containerPort: 3000
