@@ -1,3 +1,5 @@
+https://devopscube.com/kubernetes-ingress-tutorial/
+
 minikube start
 minikube addons enable ingress
 
