@@ -1,0 +1,204 @@
+headless-service.yaml:
+======================
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx
+  labels:
+    app: nginx
+spec:
+  ports:
+  - port: 80
+    name: web
+  clusterIP: None
+  selector:
+    app: nginx
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: web
+spec:
+  selector:
+    matchLabels:
+      app: nginx 
+  serviceName: "nginx"
+  replicas: 3 
+  minReadySeconds: 10
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      terminationGracePeriodSeconds: 10
+      containers:
+      - name: nginx
+        image: registry.k8s.io/nginx-slim:0.8
+        ports:
+        - containerPort: 80
+          name: web
+        volumeMounts:
+        - name: www
+          mountPath: /usr/share/nginx/html
+  volumeClaimTemplates:
+  - metadata:
+      name: www
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      storageClassName: "my-storage-class"
+      resources:
+        requests:
+          storage: 1Gi
+          
+---
+official-nginx.yaml:
+====================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-official-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nginx-official
+  template:
+    metadata:
+      labels:
+        app: nginx-official
+    spec:
+      containers:
+        - name: nginx-official
+          image: 'nginx:latest'
+          ports:
+            - containerPort: 8080
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx-official-service
+spec:
+  type: LoadBalancer
+  ports:
+    - protocol: TCP
+      port: 80
+  selector:
+    app: nginx-official
+    
+---
+staefulset.yaml:
+===============
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx
+  labels:
+    app: nginx
+spec:
+  ports:
+  - port: 80
+    name: web
+  clusterIP: None
+  selector:
+    app: nginx
+
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: web
+spec:
+  selector:
+    matchLabels:
+      app: nginx 
+  serviceName: "nginx"
+  replicas: 3
+  minReadySeconds: 10
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      terminationGracePeriodSeconds: 10
+      containers:
+      - name: nginx
+        image: registry.k8s.io/nginx-slim:0.8
+        ports:
+        - containerPort: 80
+          name: web
+        volumeMounts:
+        - name: www
+          mountPath: /usr/share/nginx/html
+  volumeClaimTemplates:
+  - metadata:
+      name: www
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      storageClassName: "my-storage-class"
+      resources:
+        requests:
+          storage: 1Gi
+---
+magical-nginx.yaml:
+===================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: magical-nginx-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: magical-nginx
+  template:
+    metadata:
+      labels:
+        app: magical-nginx
+    spec:
+      containers:
+        - name: magical-nginx
+          image: 'vikas24775/magicalnginx:latest'
+          ports:
+            - name: nginx-port
+              containerPort: 3000
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: magical-nginx-service
+spec:
+  type: LoadBalancer
+  ports:
+    - protocol: TCP
+      port: 80
+  selector:
+    app: magical-nginx
+ 
+ ingress.yaml:
+ ============
+ apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: nginx-rules
+spec:
+  rules:
+  - host: nginx-official.example.com
+    http:
+      paths:
+      - path: /
+        pathType: Exact
+        backend:
+          service:
+            name: nginx-official-service
+            port:
+              number: 80
+  - host: magical-nginx.example.com
+    http:
+      paths:
+      - path: /
+        pathType: Exact
+        backend:
+          service:
+            name: magical-nginx-service
+            port:
+              number: 80
