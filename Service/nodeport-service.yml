@@ -34,3 +34,7 @@ spec:
           image: nginx
           ports:
             - containerPort: 80
+
+open port to see the output on browser by using the below command:
+
+gcloud compute firewall-rules create fw-rule-gke-np --allow tcp:30099
