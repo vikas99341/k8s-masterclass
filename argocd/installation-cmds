@@ -1,0 +1,21 @@
+https://argo-cd.readthedocs.io/en/stable/cli_installation/
+
+kubectl create ns argocd
+kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
+kubectl edit service/argocd-server -n argocd
+kubectl get secret -n argocd -o yaml
+
+Install argoCD cli:
+curl -sSL -o argocd-linux-amd64 https://github.com/argoproj/argo-cd/releases/latest/download/argocd-linux-amd64
+sudo install -m 555 argocd-linux-amd64 /usr/local/bin/argocd
+rm argocd-linux-amd64
+
+argocd version
+
+argocd login 34.72.35.240 <lb-ip-address>
+argocd cluster list
+nano application.yaml
+kubectl apply -f application.yaml 
+argocd app list
+  
+https://github.com/vikas99341/argocd-example-apps/tree/master/guestbook
