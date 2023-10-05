@@ -1,0 +1,23 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vote-green
+  namespace: voting
+spec:
+  replicas: 1
+  selector: 
+    matchLabels:
+      app: vote_green
+  template:
+    metadata:
+      labels:
+        app: vote_green
+    spec:
+      containers:
+      - image: vikas24775/app_vote:v3-green
+        name: vote
+
+kubectl apply -f <deployment-green.yml>
+
+kubectl edit svc vote -n voting
+ change app selector to vote_green

@@ -1,4 +1,2 @@
 Daemon Set runs a Copy of a Pod on New Node as they added to Cluster automatically . DaemonSet will be helpful in case of Monitoring, Log Collection, Proxy Configuration etc.
 
-Node Affinity is used for Pods Allocation on Worker Nodes.
-Not to Schedule Pod on Nodes is achieve via Node Anti-Affinity.

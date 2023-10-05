@@ -1,0 +1,6 @@
+nodeSelector is define in Pod Spec to limit which Node(s) the pod can be scheduled on.NodeSelector use Labels to select the suitable Node.
+
+ kubectl get pods -o wide 
+ kubectl get nodes --show-labels
+ kubectl label nodes <node-name> <as mentioned in the YAML File>
+ kubectl get nodes --show-labels

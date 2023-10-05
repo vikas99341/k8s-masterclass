@@ -1,0 +1,64 @@
+Patterns for Composite Containers:
+==================================
+
+https://kubernetes.io/blog/2015/06/the-distributed-system-toolkit-patterns/
+
+1. Sidecar containers
+2. Ambassador containers	
+3. Adapter containers
+
+https://kubernetes.io/docs/tasks/access-application-cluster/communicate-containers-same-pod-shared-volume/
+
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: multi-containers
+spec:
+
+  restartPolicy: Never
+  volumes:
+  - name: shared-data
+    emptyDir: {}
+
+  containers:
+  - name: nginx-container
+    image: nginx:latest
+    volumeMounts:
+    - name: shared-data
+      mountPath: /usr/share/nginx/html
+
+  - name: debian-container
+    image: debian:latest
+    volumeMounts:
+    - name: shared-data
+      mountPath: /pod-data
+    command: ["/bin/sh"]
+
+    args: ["-c", "echo Hello from the debian container > /pod-data/index.html"]
+    
+CONTAINER ID        IMAGE                                     COMMAND                  CREATED              STATUS                          PORTS               NAMES
+09174d65de22        debian                                    "/bin/sh -c 'echo He…"   About a minute ago   Exited (0) About a minute ago                       k8s_debian-container_multi-containers_default_ad5b615d-4796-4aa4-9825-4d55f1cea373_0
+2086fe9e70b7        nginx                                     "/docker-entrypoint.…"   About a minute ago   Up About a minute                                   k8s_nginx-container_multi-containers_default_ad5b615d-4796-4aa4-9825-4d55f1cea373_0
+
+kubectl exec -it multi-containers -c nginx-container -- /bin/bash
+
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: alive-containers
+spec:
+
+  containers:
+  - name: nginx-container
+    image: nginx:latest
+    ports:
+    - containerPort: 80 
+
+  - name: sidecar-container
+    image: curlimages/curl
+    volumeMounts:
+    command: ["/bin/sh"]
+
+    args: ["-c", "Hello from the sidecar container; sleep 300" ]

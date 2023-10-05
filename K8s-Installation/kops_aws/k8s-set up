@@ -1,0 +1,57 @@
+# Setup Kubernetes (K8s) Cluster on AWS
+
+1. Create AWS Amazon EC2 instance (Free one)
+2. yum update -y
+3. aws --version (check the aws version installed)
+4. Install kubectl on Amzon Linux instance
+    curl -LO https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl
+    chmod +x ./kubectl
+    sudo mv ./kubectl /usr/local/bin/kubectl
+    kubectl version
+
+5. Install kops on Amzon Linux instance
+	curl -LO  https://github.com/kubernetes/kops/releases/download/1.15.0/kops-linux-amd64
+    chmod +x kops-linux-amd64
+    sudo mv kops-linux-amd64 /usr/local/bin/kops
+    kops version
+
+6. Create an IAM role  with administrator access and Attach IAM role to k8s-mgmt-node instance
+7. Create an S3 bucket with unique name (k8s.morning.demo.net)
+8. Create a Route53 private hosted zone (demo.net) (you can create Public hosted zone if you have a domain)
+
+9. Expose environment variable:    export KOPS_STATE_STORE=s3://k8s.morning.demo.net 
+
+10. Create sshkeys before creating cluster for private and public key : ssh-keygen
+
+11. Create kubernetes cluster definitions on S3 bucket
+   kops create cluster --cloud=aws --zones=us-east-1a --name=k8s.morning.demo.net --dns-zone=demo.net --dns private
+
+12. Edit your node instance group change instance type to t2.micro : kops edit ig --name=k8s.morning.demo.net nodes
+13. Edit your master instance group change instance type to t2.micro : kops edit ig --name=k8s.morning.demo.net master-us-east-1a
+
+14. Create kubernetes cluser
+    kops update cluster --name k8s.morning.demo.net --yes
+
+15. Validate your cluster after 10 mins :  kops validate cluster
+
+16. list nodes: kubectl get nodes --show-labels
+
+17. ssh to the master: ssh -i ~/.ssh/id_rsa admin@api.k8s.morning.demo.net 
+18. Upgrade as root : sudo su -
+
+19. To list nodes :   kubectl get all
+
+20. To delete cluster :  kops delete cluster k8s.morning.demo.net --yes
+
+   
+#### Deploying Nginx pods on Kubernetes
+1. Deploying Nginx Container
+    kubectl run sample-nginx --image=nginx --replicas=2 --port=80
+    kubectl get pods
+    kubectl get deployments
+
+2. Expose the deployment as service.
+   kubectl expose deployment sample-nginx --port=80 --type=LoadBalancer
+   kubectl get services -o wide
+
+  https://github.com/kubernetes/kops/blob/master/docs/terraform.md

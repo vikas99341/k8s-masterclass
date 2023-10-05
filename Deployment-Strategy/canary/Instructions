@@ -1,0 +1,26 @@
+vote-canary-deployment.yml:
+==========================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vote-canary
+  namespace: voting
+spec:
+  replicas: 1
+  selector: 
+    matchLabels:
+      app: vote
+  template:
+    metadata:
+      labels:
+        app: vote
+    spec:
+      containers:
+      - image: vikas24775/app_vote:v4-canary
+        name: vote
+
+kubectl apply -f <vote-canary-deployment.yml>
+
+kubectl edit svc vote -n voting {app label should be vote only}
+sessionAffinity: ClientIP
+

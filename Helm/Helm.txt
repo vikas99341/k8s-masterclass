@@ -1,0 +1,17 @@
+Package manager for K8S helps to manage k8s application and is maintained by CNCF (along with fluentd, linkerd etc)
+
+Uses a packaging format called charts: Collection of files that describe a set of k8s resources .
+Single chart can deploy an app or db , will handle dependencies .
+
+webserver --> database
+https://helm.sh/docs/helm/helm_search_hub/
+
+https://artifacthub.io/packages/helm/bitnami/nginx
+$ helm repo add bitnami https://charts.bitnami.com/bitnami
+$ helm search repo nginx
+$ helm pull bitnami/nginx --untar=true
+$ helm install my-release bitnami/nginx
+
+
+
+https://get.helm.sh/helm-canary-linux-amd64.tar.gz
