@@ -1,0 +1,51 @@
+staefulset.yaml:
+===============
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: sts-web
+spec:
+  replicas: 3 
+  serviceName: svc-hl-web
+  selector:
+    matchLabels:
+      tag: label-sts-web 
+  template:
+    metadata:
+      labels:
+        tag: label-sts-web
+    spec:
+      containers:
+      - name: ctr-sts-web
+        image: httpd
+
+headless-service.yaml:
+======================
+apiVersion: v1
+kind: Service
+metadata:
+  name: svc-hl-web
+spec:
+  clusterIP: None
+  selector:
+    tag: label-sts-web
+    
+nano staefulset.yaml
+kubectl apply -f staefulset.yaml 
+nano sts-hl.yaml
+kubectl apply -f sts-hl.yaml 
+kubectl get all
+kubectl get pods -o wide
+kubectl get ep -o wide
+kubectl delete po sts-web-0
+kubectl get pods -o wide
+kubectl exec -it sts-web-0 bash
+  
+Inside the pod   
+    1  apt-update
+    2  apt update -y 
+    3  apt install dnsutils
+    4  nslokup 
+    5  nslookup 
+    6  history
