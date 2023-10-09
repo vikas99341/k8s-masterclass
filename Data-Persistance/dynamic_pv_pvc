@@ -1,0 +1,30 @@
+pvc-web.yaml
+------------
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: pvc-web
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 3Gi
+
+po-pvc-web.yaml:
+---------------
+apiVersion: v1
+kind: Pod
+metadata:
+  name: po-pvc-web
+spec:
+  volumes:
+    - name: vol-pvc-web
+      persistentVolumeClaim:
+        claimName: pvc-web
+  containers:
+    - name: ctr-pvc-web
+      image: nginx
+      volumeMounts:
+      - mountPath: "/usr/share/nginx/html"
+        name: vol-pvc-web      
