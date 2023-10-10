@@ -1,0 +1,145 @@
+===============
+Network policy
+===============
+networkpolicy-allow-egress.yml:
+===============================
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-google
+spec:
+  podSelector: 
+    matchLabels:
+      app: egress
+  policyTypes:
+  - Egress
+  egress:
+  - to:
+    - ipBlock:
+        cidr: 8.8.8.8/32
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-dns
+spec:
+  podSelector: 
+    matchLabels:
+      app: egress
+  policyTypes:
+  - Egress
+  egress:
+  - to:
+    # allow DNS resolution
+    ports:
+      - port: 53
+        protocol: UDP
+      - port: 53
+        protocol: TCP
+        
+networkpolicy-isolation-egress.yml:
+===================================
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny
+spec:
+  podSelector: {}
+  policyTypes:
+  - Ingress
+  - Egress
+  
+networkpolicy-isolation.yml:
+============================
+kind: NetworkPolicy
+apiVersion: networking.k8s.io/v1
+metadata:
+  name: default-deny
+  namespace: default
+spec:
+  podSelector:
+    matchLabels: {}
+
+networkpolicy-nginx.yml:
+=========================
+kind: NetworkPolicy
+apiVersion: networking.k8s.io/v1
+metadata:
+  name: access-nginx
+  namespace: default
+spec:
+  podSelector:
+    matchLabels:
+      app: nginx
+  ingress:
+    - from:
+    #- ipBlock:
+    #    cidr: 172.17.0.0/16
+      - podSelector:
+          matchLabels:
+            app: access-nginx
+      ports:
+      - protocol: TCP
+        port: 80
+        
+nginx.yml:
+==========
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx
+  labels:
+    app: nginx
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - name: nginx
+        image: nginx
+        ports:
+        - name: http-port
+          containerPort: 80
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx
+  labels:
+    app: nginx
+spec:
+  ports:
+  - port: 80
+    nodePort: 31001
+    targetPort: http-port
+    protocol: TCP
+  selector:
+    app: nginx
+  type: NodePort
+
+
+Ingress:
+========
+1. kubectl create -f nginx.yml
+2. crl <node_ip:port_number> on terminal
+3. kubectl create -f networkpolicy-isolation.yml
+4. crl <node_ip:port_number> on terminal -- dosen't work
+5. kubectl run -i --tty busybox-demo --rm --image=busybox --restart=Never -- /bin/sh == > inside --> wget nginx -O- == > dosen't work
+6. kubectl create -f networkpolicy-nginx.yml
+7. kubectl run -i --tty busybox-demo --rm -l app=access-nginx --image=busybox --restart=Never -- /bin/sh == > inside --> wget nginx -O- == > works 
+
+Egress:
+======
+8. kubectl replace -f networkpolicy-isolation-egress.yml 
+9. kubectl run -i --tty busybox-demo --rm --image=busybox --restart=Never -- /bin/sh == > inside --> ping google.com
+10.kubectl create -f networkpolicy-allow-egress.yml 
+11.kubectl run -i --tty busybox-demo --rm -l app=egress --image=busybox --restart=Never -- /bin/sh
+
+kubectl run -it --rm -l app=access-nginx --image busybox busybox -- /bin/sh
+kubectl run -i --tty busybox-demo --rm --image=busybox --restart=Never -- /bin/sh
