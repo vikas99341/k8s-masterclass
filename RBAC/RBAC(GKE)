@@ -1,0 +1,125 @@
+Creating a Kubernetes RBAC user in Google Kubernetes Engine (GKE):
+==================================================================
+
+An internal Google service manages root keys for this CA, which are non-exportable. This service accepts certificate signing requests, including those from the kubelets in each GKE cluster. Even if the API server in a cluster were compromised, the CA would not be compromised, so no other clusters would be affected.
+
+Generate a private key:
+$ openssl genrsa -out mia.key 2048
+
+Generate a CSR:
+$ openssl req -new -key mia.key -out mia.csr -subj "/CN=mia/O=acg"
+
+Base64 encode the CSR:
+$ ENCODED=$(cat mia.csr | base64 | tr -d "\n")
+
+Call the Kubernetes CertificateSigningRequest API:
+$ cat <<EOF | kubectl apply -f -
+apiVersion: certificates.k8s.io/v1
+kind: CertificateSigningRequest
+metadata:
+  name: mia
+spec:
+  request: $ENCODED
+  signerName: kubernetes.io/kube-apiserver-client
+  #expirationSeconds: 86400  # Only supported on >=1.22
+  usages:
+  - client auth
+EOF
+
+Make sure CSR is in the system:
+$ kubectl get csr
+NAME                                                   AGE    SIGNERNAME                                    REQUESTOR                                              CONDITION
+mia                                                    103s   kubernetes.io/kube-apiserver-client           xxx@gmail.com                       Pending
+
+Approve CSR:
+$ kubectl certificate approve mia
+certificatesigningrequest.certificates.k8s.io/mia approved
+
+Check CSR state is approved:
+kubectl get csr
+NAME                                                   AGE     SIGNERNAME                                    REQUESTOR                                              CONDITION
+mia                                                    2m10s   kubernetes.io/kube-apiserver-client           xxx@gmail.com                       Approved,Issued
+
+Grab and decode signed certificate:
+$ kubectl get csr mia -o jsonpath='{.status.certificate}'| base64 -d > mia.crt
+
+View the certificate if you like for signing information:
+$ cat mia.crt |openssl x509 -text
+
+Certificate:
+    Data:
+        Version: 3 (0x2)
+        Serial Number:
+            a7:97:bc:24:f6:59:d5:5e:ad:1d:80:e4:b9:d7:a2:3c
+        Signature Algorithm: sha256WithRSAEncryption
+        Issuer: CN = 3464edca-a0be-4fd1-afb6-11a252e08735
+        Validity
+            Not Before: Oct 16 03:59:42 2021 GMT
+            Not After : Oct 15 03:59:42 2026 GMT
+        Subject: O = acg, CN = mia
+        Subject Public Key Info:
+            Public Key Algorithm: rsaEncryption
+                RSA Public-Key: (2048 bit)
+[ ... truncated ... ]
+
+Add a new mia credentials to your local kubectl config:
+$ kubectl config set-credentials mia --client-key=mia.key --client-certificate=mia.crt --embed-certs=true
+
+Grab current context:
+$ CURRENT_CONTEXT=$(kubectl config current-context)
+
+Create new mia context:
+$ kubectl config set-context mia --cluster=$CURRENT_CONTEXT --namespace=acg --user=mia
+
+Try and list pods as mia:
+$ kubectl get pods --context mia
+
+Error from server (Forbidden): pods is forbidden: User "mia" cannot list resource "pods" in API group "" in the namespace "acg"
+
+Create role and role binding:
+
+$ kubectl apply -f role.yml
+clusterrole.rbac.authorization.k8s.io/acgrbac created
+
+$ kubectl apply -f rolebinding.yml
+rolebinding.rbac.authorization.k8s.io/acgrbac created
+
+Get the pods again:
+$ kubectl get pods --context mia
+NAME                       READY   STATUS    RESTARTS   AGE
+acg-web-6dbf94b886-7jxts   1/1     Running   0          54m
+
+But you cannot look at other namespaces:
+kubectl get pods --namespace=kube-system --context mia
+
+Error from server (Forbidden): pods is forbidden: User "mia" cannot list resource "pods" in API group "" in the namespace "kube-system"
+
+
+pod-reader-role.yml:
+====================
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  namespace: acg
+  name: pod-reader
+rules:
+- apiGroups: [""]
+  resources: ["pods", "pods/log"]
+  verbs: ["get", "watch", "list", "update"]
+
+pod-reader-rolebinding.yml:
+==========================
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: pod-reader
+  namespace: acg
+subjects:
+- kind: User
+  name: mia
+  apiGroup: rbac.authorization.k8s.io
+roleRef:
+  kind: Role
+  name: pod-reader
+  apiGroup: rbac.authorization.k8s.io
