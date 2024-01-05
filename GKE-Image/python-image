@@ -1,0 +1,41 @@
+nano Dockerfile:
+================
+# Import Python runtime and set up working directory
+FROM python:3.7-slim
+WORKDIR /app
+ADD . /app
+
+# Install any necessary dependencies
+RUN pip3 install -r requirements.txt
+
+# Open port 8080 for serving the webpage
+EXPOSE 8080
+
+# Run app.py when the container launches
+CMD ["python3", "app.py"]
+
+nano requirements.txt:
+=====================
+Flask
+
+nano app.py:
+===========
+
+from flask import Flask
+import os
+import socket
+app = Flask(__name__)
+@app.route("/")
+def hello():
+ html = "<h3>Hello, World!</h3>"
+ return html
+if __name__ == "__main__":
+ app.run(host='0.0.0.0', port=8080)
+
+Run locally : sudo pip3 install flask
+              python3 app.py
+			  
+docker build -t demo-image .
+docker tag demo-image gcr.io/edureka-project-410308/demo-image
+gcloud auth configure-docker
+docker push gcr.io/edureka-project-410308/demo-image
