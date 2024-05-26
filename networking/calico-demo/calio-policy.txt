@@ -55,35 +55,3 @@ spec:
 		  
 kubectl apply -f network-policy-allow-pod.yaml 
 kubectl run --rm -it frontend --image=alpine --labels app=webapp,role=frontend --namespace development # wget -qO- http://backend
-
-
-gcloud container clusters create calico-demo-cluster --enable-network-policy --region us-central1-a --num-nodes=2
-
-curl -L https://github.com/projectcalico/calico/releases/download/v3.24.6/calicoctl-linux-amd64 -o calicoctl
-chmod +x calicoctl
-sudo ln -s /home/teach_edureka2301/calicoctl /usr/local/bin/calicoctl
-calicoctl version
-calicoctl get nodes --allow-version-mismatch
-
-kubectl create ns calico-policy-ns
-kubectl create deployment --namespace calico-policy-ns nginx --image=nginx
-kubectl expose --namespace calico-policy-ns deployment nginx --port=80
-kubectl run --namespace calico-policy-ns access --rm -it --image busybox /bin/sh
-inside -- wget -q --timeout=5 nginx -O -
-          wget -q --timeout=5 google.com -O -
-		  
-cat policy.yaml
-===============
-apiVersion: projectcalico.org/v3
-kind: NetworkPolicy
-metadata:
-  name: allow-busybox-egress
-  namespace: calico-policy-ns
-spec:
-  selector: run == 'access'
-  types:
-  - Egress
-  egress:
-  - action: Allow
-
-cat policy.yaml | calicoctl create -f - --allow-version-mismatch

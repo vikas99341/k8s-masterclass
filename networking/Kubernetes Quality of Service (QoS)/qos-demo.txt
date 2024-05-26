@@ -1,0 +1,90 @@
+Kubernetes Quality of Service (QoS):
+
+1. Guaranteed
+2. Burstable
+3. BestEffort
+
+req-limits.yaml:
+================
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: example
+spec:
+  containers:
+  - name: app
+    image: nginx:1.14.2
+    resources:
+      requests:
+        memory: 64Mi
+        cpu: 250m
+      limits:
+        memory: 128Mi
+        cpu: 500m
+		
+guaranteed.yaml:
+================
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: guaranteed-pod
+spec:
+  containers:
+  - name: app
+    image: nginx:1.14.2
+    resources:
+      requests:
+        memory: 128Mi
+        cpu: 500m
+      limits:
+        memory: 128Mi
+        cpu: 500m
+		
+burstable-pod.yaml:
+===================
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: burstable-pod
+spec:
+  containers:
+  - name: app
+    image: nginx:1.14.2
+    resources:
+      requests:
+        memory: 64Mi
+        cpu: 200m
+      limits:
+        memory: 128Mi
+        cpu: 500m
+		
+burstable-no-limit-pod.yaml:
+===========================
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: burstable-no-limit-pod
+spec:
+  containers:
+  - name: app
+    image: nginx:1.14.2
+    resources:
+      requests:
+        memory: 64Mi
+        cpu: 200m
+
+best-effort-pod.yaml:
+=====================
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: best-effort-pod
+spec:
+  containers:
+  - name: app
+    image: nginx:1.14.2

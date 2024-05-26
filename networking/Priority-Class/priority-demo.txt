@@ -1,0 +1,94 @@
+Priority : critical, high-priority, low-priority
+
+high-priority.yaml:
+===================
+---
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: high-priority
+value: 100
+globalDefault: false
+description: "This priority class should be used for API only."
+
+low-priority.yaml:
+==================
+---
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: low-priority
+value: 50
+globalDefault: false
+description: "This priority class should be used for API only."
+
+command:
+========
+kubectl get priorityclass
+
+low-priority-deployment.yaml:
+=============================
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: low-priority-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      priorityClassName: low-priority
+      containers:
+      - name: nginx
+        image: nginx:1.14.2
+        resources:
+          requests:
+            memory: 1Gi
+			
+high-priority-deployment.yaml:
+==============================
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: high-priority-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      priorityClassName: high-priority
+      containers:
+      - name: nginx
+        image: nginx:1.14.2
+        resources:
+          requests:
+            memory: 1Gi
+			
+pod.yaml:
+=========
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx
+spec:
+  containers:
+  - name: nginx
+    image: nginx
+    imagePullPolicy: IfNotPresent
+	
+kubectl get pods -A
+kubectl get pods -A \
+    -o jsonpath='{range .items[*]}{.metadata.name}{" - "}{.spec.priorityClassName}{"\n"}{end}'

@@ -1,0 +1,489 @@
+Kubernetes Scheduling:
+======================
+node-name:
+----------
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx
+spec:
+  containers:
+  - name: nginx
+    image: nginx:latest
+  nodeName: gke-your-first-cluster-1-pool-1-319cd5cc-x97k # schedule pod to specific node
+
+nodeSelector:
+-------------
+kubectl label nodes <gke-your-first-cluster-1-pool-1-319cd5cc-t6x0> disktype=ssd
+-------------
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx
+spec:
+  containers:
+  - name: nginx
+    image: nginx
+  nodeSelector:
+    disktype: ssd
+
+Node Affinity:
+--------------
+apiVersion: v1
+kind: Pod
+metadata:
+ name: db
+spec:
+ affinity:
+   nodeAffinity:
+     requiredDuringSchedulingIgnoredDuringExecution:
+       nodeSelectorTerms:
+       - matchExpressions:
+         - key: disk-type
+           operator: In
+           values:
+           - ssd
+     preferredDuringSchedulingIgnoredDuringExecution:
+     - weight: 1
+       preference:
+         matchExpressions:
+         - key: zone
+           operator: In
+           values:
+           - zone1
+           - zone2
+ containers:
+ - name: db
+   image: mysql
+   
+Pod Affinity:
+------------
+apiVersion: v1
+kind: Pod
+metadata:
+ name: middleware
+spec:
+ affinity:
+   podAffinity:
+     requiredDuringSchedulingIgnoredDuringExecution:
+     - labelSelector:
+         matchExpressions:
+         - key: role
+           operator: In
+           values:
+           - frontend
+       topologyKey: kubernetes.io/hostname
+   podAntiAffinity:
+     preferredDuringSchedulingIgnoredDuringExecution:
+     - weight: 100
+       podAffinityTerm:
+         labelSelector:
+           matchExpressions:
+           - key: role
+             operator: In
+             values:
+             - auth
+         topologyKey: kubernetes.io/hostname
+ containers:
+ - name: middleware
+   image: redis
+   
+did’t want to schedule two pod from this app to the same host:
+--------------------------------------------------------------
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: nginx
+spec:
+  replicas: 5
+  template:
+    metadata:
+      labels:                                            
+        app: nginx                                   
+    spec:
+      affinity:
+        podAntiAffinity:                                 
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - topologyKey: kubernetes.io/hostname
+            labelSelector:                               
+              matchLabels:                               
+                app: nginx        
+      container:
+        image: nginx:latest
+
+Taints and Tolerations:
+-----------------------
+kubectl taint nodes [node name] [key=value]:NoSchedule
+kubectl taint nodes worker-01 locked=true:NoSchedule
+
+apiVersion: v1
+kind: Pod
+metadata:
+ name: mypod
+spec:
+ containers:
+ - name: mycontainer
+   image: nginx
+ tolerations:
+ - key: "locked"
+   operator: "Equal"
+   value: "true"
+   effect: "NoSchedule"
+   
+minimal-ingress.yaml:
+=====================a
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: minimal-ingress
+spec:
+  backend:
+    service:
+    name: svc-np-minimal
+    port:
+      number: 8080
+      
+svc-np-minimal.yaml:
+===================
+apiVersion: v1
+kind: Service
+metadata:
+  name: svc-np-minimal
+spec:
+  type: NodePort
+  selector:
+    tag: myapp-label
+  ports:
+    - name: myapp-port-label
+      protocol: TCP
+      port: 8080
+      targetPort: 9376
+      
+deploy-np-minimal.yaml:
+======================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: minimal-deployment
+spec:
+  template:
+    metadata:
+      labels:
+        tag: myapp-label
+    spec:
+      containers:
+      - name: ctr-minimal
+        image: nginx
+        ports:
+        - containerPort: 80
+  replicas: 3
+  selector:
+    matchLabels:
+      tag: myapp-label
+
+
+        
+==============================================================
+create-pv.yaml:
+--------------
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: pv-vol
+spec:
+  storageClassName: manual
+  capacity:
+    storage: 2Gi
+  accessModes:
+    - ReadWriteOnce
+  hostPath:
+    path: /mnt/data/redis
+
+kubectl apply -f create-pv.yaml
+Note that you will have to create this directory /mnt/data/redis on a node in the cluster.
+
+ create-pvc.yaml
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: redis-pv-claim
+spec:
+  storageClassName: manual
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+	  
+kubectl apply -f create-pvc.yaml
+
+
+reate-redis-deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis
+spec:
+  selector:
+    matchLabels:
+      app: redis
+  template:
+    metadata:
+      labels:
+        app: redis
+    spec:
+      containers:
+        - name: redis
+          image: redis:latest
+          ports:
+            - containerPort: 6379
+          volumeMounts:
+            - mountPath: /var/lib/redis/
+              name: redis-volume
+      volumes:
+        - name: redis-volume
+          persistentVolumeClaim:
+            claimName: redis-pv-claim
+			
+kubectl create -f create-redis-deployment.yaml
+
+Possible reasons of failure:
+1. container or node dies
+2. network failure
+3. Replica dies 
+4. Manual interruption
+5. Node Maintainance
+
+Possible Solution:
+=================
+1. Create a custom script
+2. Monitoring
+3. CM Tool
+4. L1/L2 support
+5. Manually store state
+
+
+calico:
+=======
+
+Zero Trust Access - Strict min access 
+
+========================================
+apiVersion: v1
+kind: Service
+metadata:
+  name: hello-k8s
+spec:
+  type: LoadBalancer
+  ports:
+    - port: 80
+      targetPort: 8080
+  selector:
+    app: hello-k8s
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hello-k8s
+spec:
+  replicas: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 2
+      maxSurge: 2
+  selector:
+    matchLabels:
+      app: hello-k8s
+  template:
+    metadata:
+      labels:
+        app: hello-k8s
+    spec:
+      containers:
+        - name: hello-k8s
+          image: CONTAINER_IMAGE
+          securityContext:
+            privileged: false
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+          ports:
+            - containerPort: 8080
+==============================================================================
+Taint & Toleration
+multiple scheduler
+hpa
+
+
+4 service demo
+probe  & restart
+scheduler
+resource limit
+pod priority
+taint & tolerate
+node affinity
+
+rc
+deamon
+rollback deployment
+manual and hpa scaling
+ingress & controller
+
+
+=======================================================
+
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx-nodeaffinity
+spec:
+  containers:
+    - name: nginx
+      image: nginx
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+          - matchExpressions:
+              - key: disktype
+                operator: In
+                values:
+                  - ssd
+---
+
+
+Say you’re given the task of deploying a production level stateless application on Kubernetes with 2 very familiar criteria:
+
+Maximum uptime
+Minimum costs
+
+The kubernetes default scheduler prioritizes balancing node utilization over anything else, and this is why we need the custom scheduler that prioritizes the spreading of pods across nodes, so that even if a node gets preempted, at least one replica of each micro-service will be available on another node.
+
+richardchesterwood/k8s-fleetman-webapp-angular:release0
+kubectl get po --show-labels -l release=0
+kubectl get all -n kube-system
+
+inside container for service discovery:
+cat /etc/resolv.conf
+nslookup
+
+kubectl exec webapp ls
+wget http://localhost:80 - inside pod
+kubectl port-forward webapp 30080:80
+
+pod:
+===
+apiVersion: v1
+kind: Pod
+metadata:
+  name: webapp
+  labels:
+    mylabelname: webapp
+spec:
+  containers:
+  - name: webapp
+    image: richardchesterwood/k8s-fleetman-webapp-angular:release0
+
+service:
+========
+apiVersion: v1
+kind: Service
+metadata:
+  name: fleet-webapp
+spec:
+  selector:
+    mylabelname: webapp
+  ports:
+    - name: http
+      port: 80
+      targetPort: 9376
+
+K8s Management Tools:
+=====================
+➤ Kubectl
+➤ Kubeadm
+➤ Minikube
+➤ Helm
+➤ Kompose
+➤ Kustomize
+➤ cloud control plane
+
+K8s Management Overview :
+
+1. Auto deployment of containerized application across different servers(virtual or physical).
+2. Load distribution and SetUp K8s HA Cluster
+3. Auto Scaling
+4. Monitoring & health check, Upgrading Kubernetes Cluster
+5. Replacemet of failed containerized, Backing Up and Restoring Etcd Cluster	
+
+docker/ CRI-O / containerd
+
+Terminology:
+1. Pod (containers inside share volume & IP adress)
+2. Cluster
+3. Service
+
+https://learnk8s.io/kubernetes-terraform
+
+https://medium.com/finnovate-io/setting-up-a-kubernetes-cluster-in-gcp-5903c3dc46f1
+
+https://medium.com/techbull/gke-cluster-with-gcloud-utility-for-dummies-5e42bf01b739
+
+
+gcloud container clusters create demo-gke-cluster --machine-type n1-standard-2 --num-nodes 2 --zone us-central1-c
+
+kubectl scale deploy demo-nginx --replicas=3
+
+NAME                                              STATUS   ROLES    AGE   VERSION           INTERNAL-IP   EXTERNAL-IP      OS-IMAGE                             KERNEL-VERSION   CONTAINER-RUNTIME
+gke-demo-gke-cluster-default-pool-cb0c7f91-003s   Ready    <none>   13h   v1.25.8-gke.500   10.128.0.11   34.122.222.186   Container-Optimized OS from Google   5.15.89+         containerd://1.6.18
+gke-demo-gke-cluster-default-pool-cb0c7f91-4vf4   Ready    <none>   13h   v1.25.8-gke.500   10.128.0.10   34.123.255.39    Container-Optimized OS from Google   5.15.89+         containerd://1.6.18
+
+kubectl config view 
+kubectl get 
+kubectl api-resources | wc -l
+kubectl get pods <> -o yaml
+kubectl exec <> -c nginx -- cat /etc/nginx/nginx.conf
+
+
+K8s RBAC Objects:
+
+➢ Roles and ClusterRoles are K8s Objects that define set of permissions.
+➢ Roles define permission within namespace.
+➢ ClusterRoles define permission across the cluster. Not limited to specific namespace. 
+➢ RoleBinding Object connects Roles to user.
+➢ ClusterBinding Object connects ClusterRoles to Users.In K8s, Service Account used by container process to Authenticate with K8s APIs.  If Pods needs to communicate with K8s APIs. User need to  setup service account to control the access.
+
+
+
+FROM ubuntu:latest
+CMD ["echo", "hello"]
+
+FROM ubuntu:latest
+ENTRYPOINT ["echo"]
+
+FROM ubuntu:latest
+ENTRYPOINT ["echo"]
+cmd ["vikas"]
+
+https://docs.docker.com/engine/reference/builder/#entrypoint
+https://aboullaite.me/dockerfile-run-vs-cmd-vs-entrypoint/
+
+RUN : Executes when building the image
+ENTRYPOINT & CMD : Executes when the container starts
+
+FROM alpine
+
+RUN apk add python
+cmd ["8.8.8.8"]
+ENTRYPOINT ["ping","-t","5"]
+
+
+FROM ubuntu:trusty
+CMD ["/bin/ping","localhost"]
+
+FROM ubuntu:trusty
+CMD ping localhost
+
+

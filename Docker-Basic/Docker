@@ -1,1 +1,43 @@
-Docker
+How to use Docker images and create Containers
+Manage Docker containers: start, stop, prune, restart
+Enable port mapping and expose container ports to outside
+Run Node and Python applications using Docker Containers
+Create environment variables for Docker containers
+Use volumes mapping and use specific working directories in the Docker containers
+Create custom bridge networks and run multiple containers
+Communicate between containers by container name in the custom bridge network
+
+lsb_release -cs
+uname -m 
+
+image:
+busybox
+alpine
+helloworld
+nginx
+
+docker history <container_name>
+docker container ls / docker ps
+docker logs <container_id>
+docker container prune 
+
+docker run -p 8081:80 -v <your_path>:/usr/share/nginx/html nginx:latest
+favicon.io
+
+docker run -p 8081:80 -v ${PWD}:/usr/share/nginx/html nginx
+docker run -it -v ${PWD}:/app python:latest python3 /app/hello-world.py
+docker run -it -v ${PWD}:/app -w /app python:latest python3 hello-world.py
+
+docker run -it -v ${PWD}:/app -w /app python:latest python3 calendar-app.py
+calendar-app.py:
+===============
+import calendar
+
+print('Welcome to the Calendar application!')
+
+year = int(input('Please enter any year:'))
+month = int(input('Please enter any month number:'))
+
+print(calendar.month(year, month))
+
+print('Have a nice day!')

@@ -1,0 +1,44 @@
+Step 1 - Deploy the NGINX Ingress Controller
+
+kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.1.1/deploy/static/provider/baremetal/deploy.yaml
+
+kubectl get all --namespace=ingress-nginx
+
+kubectl create deployment frontend1 --image=httpd --port 80
+kubectl expose deployment frontend1 --name frontend1service --target-port 80
+
+kubectl create deployment frontend2 --image=nginx --port 80
+kubectl expose deployment frontend2 --name frontend2service --target-port 80
+
+kubectl get service deployment
+
+ingress-rules.yaml:
+===================
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: my-ingress-rules
+  namespace: default
+  annotations:
+	nginx.ingress.kubernetes.io/rewrite-target: /
+spec:
+  rules:
+  - http:
+      paths:
+      - path: /httpd
+		pathType: Excat
+        backend:
+          service:
+            name: frontend1service
+            port:
+              number: 80
+      - path: /nginx
+		pathType: Excat
+        backend:
+          service:
+            name: frontend2service
+            port:
+              number: 80
+
+kubectl apply -f ingress-rules.yaml
+kubectl get service ingress-nginx-controller --namespace=ingress-nginx
