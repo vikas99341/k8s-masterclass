@@ -37,8 +37,11 @@ spec:
               number: 8080
 
 kubectl apply -f example-ingress.yaml 
-kubectl get ingress
+kubectl get ingress 
 kubectl describe ingress example-ingress 
+
+edit /etc/hosts
+<address-ingress> <dns-name>
 
 curl hello-world.info/v2
 curl hello-world.info/

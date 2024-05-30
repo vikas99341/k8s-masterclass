@@ -1,14 +1,64 @@
-k8s-multi-scheduler
-===================
-kubectl get pods -n kube-system
-
-kubectl logs <pod_name> -n kube-system
-
-kubectl create -f pod1.yaml pod2.yaml pod3.yaml
-
-my-scheduler.yaml:
-==================
-apiVersion: extensions/v1beta1
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: my-scheduler
+  namespace: kube-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: my-scheduler-as-kube-scheduler
+subjects:
+- kind: ServiceAccount
+  name: my-scheduler
+  namespace: kube-system
+roleRef:
+  kind: ClusterRole
+  name: system:kube-scheduler
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: my-scheduler-as-volume-scheduler
+subjects:
+- kind: ServiceAccount
+  name: my-scheduler
+  namespace: kube-system
+roleRef:
+  kind: ClusterRole
+  name: system:volume-scheduler
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: my-scheduler-extension-apiserver-authentication-reader
+  namespace: kube-system
+roleRef:
+  kind: Role
+  name: extension-apiserver-authentication-reader
+  apiGroup: rbac.authorization.k8s.io
+subjects:
+- kind: ServiceAccount
+  name: my-scheduler
+  namespace: kube-system
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: my-scheduler-config
+  namespace: kube-system
+data:
+  my-scheduler-config.yaml: |
+    apiVersion: kubescheduler.config.k8s.io/v1beta2
+    kind: KubeSchedulerConfiguration
+    profiles:
+      - schedulerName: my-scheduler
+    leaderElection:
+      leaderElect: false    
+---
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   labels:
@@ -17,77 +67,61 @@ metadata:
   name: my-scheduler
   namespace: kube-system
 spec:
+  selector:
+    matchLabels:
+      component: scheduler
+      tier: control-plane
   replicas: 1
   template:
     metadata:
-      labels: 
+      labels:
         component: scheduler
         tier: control-plane
         version: second
     spec:
+      serviceAccountName: my-scheduler
       containers:
-      - command: [/usr/local/bin/kube-scheduler, --address=0.0.0.0,
-                  --scheduler-name=my-scheduler, --leader-elect=false]
-        image: lachlanevenson/kube-scheduler:v1.5.1
+      - command:
+        - /usr/local/bin/kube-scheduler
+        - --config=/etc/kubernetes/my-scheduler/my-scheduler-config.yaml
+        image: registry.k8s.io/kube-scheduler:v1.27.0
         livenessProbe:
           httpGet:
             path: /healthz
-            port: 10251
+            port: 10259
+            scheme: HTTPS
           initialDelaySeconds: 15
         name: kube-second-scheduler
         readinessProbe:
           httpGet:
             path: /healthz
-            port: 10251
+            port: 10259
+            scheme: HTTPS
         resources:
           requests:
             cpu: '0.1'
         securityContext:
           privileged: false
-        volumeMounts: []
+        volumeMounts:
+          - name: config-volume
+            mountPath: /etc/kubernetes/my-scheduler
       hostNetwork: false
       hostPID: false
-      volumes: []
-	  
-pod1.yaml:
-=========
-apiVersion: v1
-kind: Pod
-metadata:
-  name: no-annotation
-  labels:
-    name: multischeduler-example
-spec:
-  containers:
-  - name: pod-with-no-annotation-container
-    image: gcr.io/google_containers/pause:2.0
+      volumes:
+        - name: config-volume
+          configMap:
+            name: my-scheduler-config
 
-pod2.yaml:
+pod.yaml:
 =========
 apiVersion: v1
 kind: Pod
 metadata:
-  name: annotation-default-scheduler
-  annotations:
-    scheduler.alpha.kubernetes.io/name: default-scheduler
+  name: my-pod
   labels:
-    name: multischeduler-example
+    name: multischeduler
 spec:
+  schedulerName: my-scheduler
   containers:
-  - name: pod-with-default-annotation-container
-    image: gcr.io/google_containers/pause:2.0
-	
-pod3.yaml:
-=========
-apiVersion: v1
-kind: Pod
-metadata:
-  name: annotation-second-scheduler
-  annotations:
-    scheduler.alpha.kubernetes.io/name: my-scheduler
-  labels:
-    name: multischeduler-example
-spec:
-  containers:
-  - name: pod-with-second-annotation-container
-    image: gcr.io/google_containers/pause:2.0
+  - name: nginx-container
+    image: nginx
