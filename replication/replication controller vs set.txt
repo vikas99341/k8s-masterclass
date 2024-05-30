@@ -1,0 +1,48 @@
+https://www.geeksforgeeks.org/kuberneters-difference-between-replicaset-and-replication-controller/
+
+Replication Controller :
+========================
+apiVersion: v1
+kind: ReplicationController
+metadata:
+  name: nginx
+spec:
+  replicas: 3
+  selector:
+    app: nginx
+  template:
+    metadata:
+      name: nginx
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - name: nginx
+        image: nginx
+        ports:
+        - containerPort: 80
+
+Replica Set:
+============
+apiVersion: apps/v1
+kind: ReplicSet
+metadata:
+  name: nginx
+spec:
+  replicas: 3
+  selector:
+    matchExpressions:
+		{key: app, operator: In, values: [nginx,frontend] }
+		{key: environment, operator: notIn, values: [production] }
+  template:
+    metadata:
+      name: nginx
+      labels:
+        app: nginx
+		environment: dev
+    spec:
+      containers:
+      - name: nginx
+        image: nginx
+        ports:
+        - containerPort: 80

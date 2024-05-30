@@ -1,0 +1,23 @@
+1. Install metric server
+2. Deploy sample app
+3. create service
+4. deploy HPA
+5. Increase work load
+6. Monitor HPA events
+
+kubectl get nodes
+kubectl top nodes 
+kubectl top pods
+
+cd k8s-masterclass\HPA\k8s_metrics_server-main\deploy\1.8+
+kubectl apply -f .
+wait and check again
+
+cd k8s-masterclass\HPA\kubernetes_manifest_yml_files-main\05-HPA
+kubectl apply -f .
+kubectl get hpa,pods
+
+kubectl run -i --tty load-generator --rm --image=busybox --restart=Never -- /bin/sh -c "while sleep 0.01; do wget -q -O- http://hpa-demo-deployment; done " 
+
+kubectl get events
+kubectl get hpa -w

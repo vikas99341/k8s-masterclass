@@ -1,0 +1,124 @@
+https://kubernetes.github.io/ingress-nginx/deploy/#gce-gke
+
+kubectl create clusterrolebinding cluster-admin-binding \
+  --clusterrole cluster-admin \
+  --user $(gcloud config get-value account)
+
+  kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.10.1/deploy/static/provider/cloud/deploy.yaml
+
+kubectl get all --namespace=ingress-nginx
+
+application-deployment-service.yaml:
+====================================
+
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: hello-pod
+  labels:
+    app: flask-hello
+spec:
+    containers:
+    - name: flask-container
+      image: vikas24775/flask-simplehello:v1  
+      ports:
+        - containerPort: 5000
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: flask-hello
+spec:
+  selector:
+    app: flask-hello
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 5000
+
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: details-greet
+  labels:
+    app: flask-greet
+spec:
+    containers:
+    - name: flask-container
+      image: vikas24775/flask-simplegreet:v1
+      ports:
+        - containerPort: 5000
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: flask-greet
+spec:
+  selector:
+    app: flask-greet
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 5000
+
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: details-pod
+  labels:
+    app: flask-details
+spec:
+    containers:
+    - name: flask-container
+      image: vikas24775/flask-simpledetails:v1
+      ports:
+        - containerPort: 5000
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: flask-details
+spec:
+  selector:
+    app: flask-details
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 5000
+
+path-based-routing.yaml:
+========================
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: flask-ingress-rule
+spec:
+  ingressClassName: nginx
+  rules:
+  - host:
+    http:
+      paths:
+      - pathType: Prefix
+        path: /
+        backend:
+          service:
+            name: flask-hello
+            port:
+              number: 80
+      - path: /alexa
+        pathType: Prefix
+        backend:
+          service:
+            name: flask-greet
+            port:
+              number: 80
+      - path: /details
+        pathType: Prefix
+        backend:
+          service:
+            name: flask-details
+            port:
+              number: 80
