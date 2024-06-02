@@ -1,0 +1,4 @@
+Volumes solve two problems
+1. Data sharing among pods within a container
+2. Data persistence even after the pods are deleted
+
