@@ -432,7 +432,8 @@ https://medium.com/finnovate-io/setting-up-a-kubernetes-cluster-in-gcp-5903c3dc4
 https://medium.com/techbull/gke-cluster-with-gcloud-utility-for-dummies-5e42bf01b739
 
 
-gcloud container clusters create demo-gke-cluster --machine-type n1-standard-2 --num-nodes 2 --zone us-central1-c
+gcloud container clusters create demo-gke-cluster --machine-type n1-standard-2 --num-nodes 2 --zone us-central1-c --no-enable-ip-alias
+--disk-type pd-standard
 
 kubectl scale deploy demo-nginx --replicas=3
 

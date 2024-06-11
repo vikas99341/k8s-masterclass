@@ -1,5 +1,7 @@
 Install Istio in Minikube cluster:
 
+gcloud container clusters create demo-gke-cluster --machine-type n1-standard-2 --num-nodes 3 --zone asia-east1-a --no-enable-ip-alias --disk-type pd-standard
+
 https://github.com/istio/istio/releases/tag/1.13.2
 https://istio.io/latest/docs/setup/getting-started/
 

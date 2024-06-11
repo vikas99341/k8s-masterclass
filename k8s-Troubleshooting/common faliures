@@ -1,1 +1,39 @@
 
+kubectl describe node <node_name> | less  
+kubectl cluster-info
+kubectl get componentstatus 
+
+logger-pod.yaml:
+===============
+apiVersion: v1
+kind: Pod
+metadata:
+ name: counter
+spec:
+ containers:
+ - name: count
+   image: busybox
+   args: [/bin/sh, -c,
+           'i=0; while true; do echo "$i: hello, enjoy DevOps Counsel Fluetd demo"; i=$((i+1)); sleep 1; done']
+		   
+kubectl get pods -o wide
+kubectl logs counter --tail=5
+kubectl logs counter --all-containers
+kubectl logs couter --since=1h
+
+multi-container-pod:
+====================
+apiVersion: v1
+kind: Pod
+metadata:
+ name: multi-container
+spec:
+ containers:
+ - name: cont1
+   image: httpd
+ - name: cont2
+   image: nginx
+   
+kubectl logs multi-container -c cont2
+   
+ 

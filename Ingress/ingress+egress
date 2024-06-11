@@ -34,7 +34,7 @@ spec:
     ports:
       - port: 53
         protocol: UDP
-      - port: 53
+      - port: 8080
         protocol: TCP
         
 networkpolicy-isolation-egress.yml:

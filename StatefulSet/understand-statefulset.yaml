@@ -70,7 +70,7 @@ spec:
       volumes:
       - name: www
         persistentVolumeClaim:
-          claimName: myclaim
+          claimName: mypvc
           
 PersistentVolume
 ================

@@ -1,0 +1,272 @@
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: elastic-sc
+  namespace: elk
+provisioner: kubernetes.io/gce-pd
+volumeBindingMode: Immediate
+allowVolumeExpansion: true
+reclaimPolicy: Delete
+parameters:
+  type: pd-standard
+  fstype: ext4
+  replication-type: none
+  
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: elasticsearch
+  namespace: elk
+  labels:
+    app: elasticsearch
+spec:
+  selector:
+    app: elasticsearch
+  clusterIP: None
+  ports:
+    - port: 9200
+      name: rest
+    - port: 9300
+      name: inter-node  
+---	  
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: es-cluster
+  namespace: elk
+spec:
+  serviceName: elasticsearch
+  replicas: 3
+  selector:
+    matchLabels:
+      app: elasticsearch
+  template:
+    metadata:
+      labels:
+        app: elasticsearch
+    spec:
+      containers:
+      - name: elasticsearch
+        image: elasticsearch:7.17.5
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 9200
+          name: rest
+          protocol: TCP
+        - containerPort: 9300
+          name: inter-node
+          protocol: TCP
+        volumeMounts:
+        - name: data
+          mountPath: /usr/share/elasticsearch/data
+        env:
+          - name: cluster.name
+            value: k8s-logs
+          - name: node.name
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.name
+          - name: discovery.seed_hosts
+            value: "es-cluster-0.elasticsearch,es-cluster-1.elasticsearch,es-cluster-2.elasticsearch"
+          - name: cluster.initial_master_nodes
+            value: "es-cluster-0"
+          - name: ES_JAVA_OPTS
+            value: "-Xms512m -Xmx512m"
+          - name: network.host
+            value: "_site_"
+      initContainers:
+      - name: fix-permissions
+        image: busybox
+        command: ["sh", "-c", "chown -R 1000:1000 /usr/share/elasticsearch/data"]
+        securityContext:
+          privileged: true
+        volumeMounts:
+        - name: data
+          mountPath: /usr/share/elasticsearch/data
+      - name: increase-vm-max-map
+        image: busybox
+        command: ["sysctl", "-w", "vm.max_map_count=262144"]
+        securityContext:
+          privileged: true
+      - name: increase-fd-ulimit
+        image: busybox
+        command: ["sh", "-c", "ulimit -n 65536"]
+        securityContext:
+          privileged: true
+  volumeClaimTemplates:
+  - metadata:
+      name: data
+      labels:
+        app: elasticsearch
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      storageClassName: elastic-sc
+      resources:
+        requests:
+          storage: 10Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kb-deployment
+  namespace: elk
+  labels:
+    app: kibana
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kibana
+  template:
+    metadata:
+      labels:
+        app: kibana
+    spec:
+      containers:
+      - name: kibana
+        image: kibana:7.17.5
+        imagePullPolicy: Always
+        env:
+          - name: ELASTICSEARCH_URL
+            value: http://elasticsearch.elk.svc.cluster.local:9200
+        ports:
+        - containerPort: 5601
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kb-svc
+  namespace: elk
+  labels:
+    app: kibana
+spec:
+  ports:
+  - port: 80
+    targetPort: 5601
+  selector:
+    app: kibana
+  type: LoadBalancer
+  
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: fluentd
+  namespace: kube-system
+  labels:
+    app: fluentd
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: fluentd
+  labels:
+    app: fluentd
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - pods
+  - namespaces
+  verbs:
+  - get
+  - list
+  - watch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: fluentd
+roleRef:
+  kind: ClusterRole
+  name: fluentd
+  apiGroup: rbac.authorization.k8s.io
+subjects:
+- kind: ServiceAccount
+  name: fluentd
+  namespace: kube-system
+--- 
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: fluentd
+  namespace: kube-system
+  labels:
+    app: fluentd
+spec:
+  selector:
+    matchLabels:
+      app: fluentd
+  template:
+    metadata:
+      labels:
+        app: fluentd
+    spec:
+      serviceAccount: fluentd
+      serviceAccountName: fluentd
+      tolerations:
+      - key: node-role.kubernetes.io/master
+        effect: NoSchedule
+      containers:
+      - name: fluentd
+        image: fluent/fluentd-kubernetes-daemonset:v1.14.1-debian-elasticsearch7-1.0
+        env:
+          - name:  FLUENT_ELASTICSEARCH_HOST
+            value: "elasticsearch.elk.svc.cluster.local"
+          - name:  FLUENT_ELASTICSEARCH_PORT
+            value: "9200"
+          - name: FLUENT_ELASTICSEARCH_SCHEME
+            value: "http"
+          - name: FLUENTD_SYSTEMD_CONF
+            value: disable
+          - name: FLUENT_CONTAINER_TAIL_EXCLUDE_PATH
+            value: /var/log/containers/fluent*
+          - name: FLUENT_ELASTICSEARCH_SSL_VERIFY
+            value: "false"
+          - name: FLUENT_CONTAINER_TAIL_PARSER_TYPE
+            value: /^(?<time>.+) (?<stream>stdout|stderr)( (?<logtag>.))? (?<log>.*)$/ 
+        volumeMounts:
+        - name: varlog
+          mountPath: /var/log
+        - name: varlibdockercontainers
+          mountPath: /var/lib/docker/containers
+          readOnly: true
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - name: varlog
+        hostPath:
+          path: /var/log
+      - name: varlibdockercontainers
+        hostPath:
+          path: /var/lib/docker/containers		  
+---
+apiVersion: v1
+kind: Pod
+metadata:
+ name: counter
+spec:
+ containers:
+ - name: count
+   image: busybox
+   args: [/bin/sh, -c,
+           'i=0; while true; do echo "$i: hello, enjoy DevOps Counsel Fluetd demo"; i=$((i+1)); sleep 1; done']
+		   
+cloudshell:~/elk$ kubectl apply -f logger-pod.yaml
+cloudshell:~/elk$ kubectl get pods
+cloudshell:~/elk$ kubectl logs counter |tail -5
+
+On Kibana console, go to ‘Analytics‘ -> ‘Discover‘ to search for logs stored in Elasticsearch cluster and type above log message in search box. There you can see logs generated by counter pod
+Conclusion: we have deployed Fluentd DaemonSets on a GKE cluster to collect, transform and ship logs to Elasticsearch cluster. You can find more information about Fluentd in official documentation.
+
+After sending some log messages using Fluentd as above we can create an index pattern and access them from ‘Analytics’ -> ‘Discover’ console.
+To create index pattern go to ‘Stack Mangement’ -> ‘index pattern’ from Kibana main console, then click on ‘Create index pattern’
+Index pattern
+Since we are using Fluentd for log shipping it will create index with “logstash” prefix by default.
+Give a name to index pattern, since our log indexes have “logstash” prefix to match with them we need to use “logstatsh-*” as index pattern name.
+Then select “@timestamp” as Timestamp field, then click on “Create index pattern” button.
+Index pattern creation
+Now go to ‘Analytics’ -> ‘Discovr’ console to see and search log messages stored in Elasticsearch cluster.
+log searching
+Conclusion - we have deployed Elasticsearch cluster and Kibana on a GKE cluster and accessed Kibana web UI and verified Elasticsearch cluster health status. We have also created a index pattern and access logs stored in Elasticsearch cluster.
+You can find more information about Elastic stack in official documentation.

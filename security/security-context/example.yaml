@@ -1,0 +1,39 @@
+# Create pod
+kubectl run busybox1 --image=busybox --sleep 3600
+
+# Go inside the container 
+kubectl exec -it busybox1 -c busybox1 -- /bin/sh 
+id
+ps aux 
+
+busybox2.yaml:
+--------------
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    run: security-context-demo
+  name: security-context-demo
+spec:
+  securityContext:
+    runAsUser: 1000
+    runAsGroup: 3000
+    fsGroup: 2000
+  volumes:
+  - name: sec-ctx-vol
+    emptyDir: {}
+  containers:
+  - name: sec-ctx-demo
+    image: busybox:1.28
+    command: [ "sh", "-c", "sleep 1h" ]
+    volumeMounts:
+    - name: sec-ctx-vol
+      mountPath: /tmp
+    securityContext:
+      allowPrivilegeEscalation: false
+
+kubectl apply -f busybox2.yaml
+kubectl exec -it security-context-demo -c sec-ctx-demo -- /bin/sh 
+id
+ps aux
+ls -l /tmp
